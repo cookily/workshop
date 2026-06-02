@@ -1,0 +1,76 @@
+# LLM 动态路由规则
+# 当 llm-dynamic-routing Skill 加载时，按此规则执行任务路由
+version: 1
+
+# 默认执行路径（日常对话）
+default:
+  mode: self           # 我自己处理
+  description: "日常对话、信息查询、简单问答"
+
+# 路由规则（按优先级匹配）
+routes:
+  - task_type: code
+    description: "编程任务 — 写代码、调试、重构、代码审查"
+    indicators:
+      - "写/改/修代码"
+      - "debug/调试"
+      - "git操作"
+      - "测试/重构"
+      - "实现某功能"
+    mode: delegate_cc   # 委托给 Claude Code
+    skill: claude-code   # 加载 claude-code skill
+
+  - task_type: reasoning
+    description: "深度推理 — 架构设计、方案对比、技术决策"
+    indicators:
+      - "架构设计"
+      - "方案对比/选型"
+      - "技术决策"
+      - "深入分析"
+      - "设计文档"
+    mode: delegate_task
+    skill: engineering-software-architect  # 或 engineering-backend-architect
+    model: deepseek-v4-pro                  # 强推理模型（使用我们有的模型）
+    provider: custom
+    context: "你是资深技术架构师，请全面分析用户的问题，给出专业建议"
+
+  - task_type: research
+    description: "信息调研 — 搜索、竞品分析、技术调研"
+    indicators:
+      - "查/搜/找"
+      - "调研/研究"
+      - "了解某个技术/项目"
+      - "竞品分析"
+      - "对比"
+    mode: self_with_tools  # 我自己处理，但优先使用搜索工具
+    tools:
+      - web_search
+      - web_extract
+
+  - task_type: vision
+    description: "视觉分析 — 图片理解、截图分析"
+    indicators:
+      - "图片"
+      - "截图"
+      - "看这张图"
+    mode: self_with_tools
+    tools:
+      - vision_analyze
+
+  - task_type: summarize
+    description: "文本汇总 — 长文总结、日报生成"
+    indicators:
+      - "总结/汇总"
+      - "太长不看"
+      - "TL;DR"
+      - "日报/周报"
+    mode: self           # 直接处理，当前模型就很擅长这个
+
+  - task_type: plan
+    description: "多步骤任务 — 需要规划后再执行的复杂任务"
+    indicators:
+      - "这是一个项目"
+      - "需要按步骤来"
+      - "规划"
+    mode: plan_first     # 先用 writing-plans 写计划，再按计划执行
+    skill: writing-plans
