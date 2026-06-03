@@ -1,0 +1,96 @@
+# server-guardian 配置
+# 服务器智能健康检查 — 监控 + 告警推送 + 日报
+
+general:
+  check_interval: 300                          # 检查间隔（秒），用于连续模式
+  data_dir: ~/docs/server-guardian              # 数据存储目录
+  log_level: INFO
+
+# 飞书推送配置
+feishu:
+  enabled: true
+  target: feishu:oc_35a81c20480431b82cc007bfb020fbb3  # 推送目标（DM）
+  daily_report_target: feishu:oc_35a81c20480431b82cc007bfb020fbb3  # 日报推送目标
+
+# 告警阈值
+thresholds:
+  disk:
+    warning: 80                                 # 磁盘使用率 > 80% 警告
+    critical: 90                                # 磁盘使用率 > 90% 严重
+  memory:
+    warning: 80                                 # 内存使用率 > 80% 警告
+    critical: 92                                # 内存使用率 > 92% 严重
+  swap:
+    warning: 50                                 # Swap 使用率 > 50% 警告
+    critical: 75                                # Swap 使用率 > 75% 严重
+  cpu:
+    warning: 80                                 # CPU 使用率 > 80% 警告
+    critical: 95                                # CPU 使用率 > 95% 严重
+  load:
+    warning: 4.0                                # 1分钟负载 > 4.0 警告（4核）
+    critical: 8.0                               # 1分钟负载 > 8.0 严重
+  process_count:
+    warning: 200                                # 进程数 > 200 警告
+  uptime_days:
+    warning: 60                                 # 运行 > 60天 警告（建议重启）
+  disk_growth:
+    warning: 5                                  # 24小时磁盘增长 > 5GB 警告
+  backup_age_hours:
+    warning: 12                                 # 看板备份超过 12小时未更新 警告
+
+# 要检查的进程（进程名或 PID 文件）
+processes:
+  - name: hermes-web-ui
+    pattern: hermes-web-ui
+    port: 8648
+  - name: hermes-gateway
+    pattern: hermes_cli.*gateway
+  - name: hermes-bridge
+    pattern: hermes_bridge.py
+    count_min: 1                                # 至少需要 1 个
+  - name: atomcode-proxy
+    pattern: atomcode-proxy
+    port: 35505
+  - name: nginx
+    pattern: nginx
+    port: 80
+  - name: docker
+    pattern: dockerd
+
+# 要监控的端口
+ports:
+  - 22       # SSH
+  - 80       # HTTP (nginx)
+  - 443      # HTTPS (nginx)
+  - 8648     # hermes-web-ui
+  - 35505    # atomcode-proxy
+
+# 要监控的文件/目录
+paths:
+  - path: ~/.hermes/kanban/boards/default/kanban.db
+    description: 看板数据库 (default)
+    max_size_mb: 500
+    check_integrity: true
+  - path: ~/.hermes/kanban/boards/hospital-project/board.db
+    description: 看板数据库 (hospital-project)
+    max_size_mb: 500
+    check_integrity: true
+  - path: ~/.hermes/kanban/boards/side-project/board.db
+    description: 看板数据库 (side-project)
+    max_size_mb: 500
+    check_integrity: true
+  - path: ~/.hermes/config.yaml
+    description: Hermes 配置文件
+  - path: ~/.hermes/routing-rules.yaml
+    description: 路由规则配置
+
+# 看板备份目录检查
+kanban_backup:
+  dir: ~/.hermes/kanban/backups
+  min_files: 3
+  max_age_hours: 12
+
+# 日报定时生成（Hermes Cron）
+daily_report:
+  enabled: true
+  time: "23:00"            # 自动日报时间

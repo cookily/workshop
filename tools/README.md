@@ -8,6 +8,7 @@
 
 | 工具 | 来路 | 类型 | 部署难度 |
 |------|------|------|---------|
+| [server-guardian](#server-guardian) | 原创 | Python 项目 | ★☆☆ |
 | [multi-agent-dispatcher](#multi-agent-dispatcher) | agents-hive | Hermes Skill | ★☆☆ |
 | [routing-rules](#routing-rules) | openhuman | 配置文件 | ★☆☆ |
 | [sketch-style-recipes](#sketch-style-recipes) | garden-skills | 模板配方 | ★☆☆ |
@@ -33,6 +34,47 @@ hermes skills list | grep multi-agent
 **配置依赖：** 需要先配置好对应的 Profile（`hospital`, `side-project`），每个 Profile 有独立 Hindsight 银行做记忆隔离。
 
 **来路** → [notes/agent/agents-hive.md](../notes/agent/agents-hive.md) — 受 Go 多 Agent 底座启发，简化成一个纯 Hermes 生态的 skill。
+
+---
+
+## server-guardian
+
+**你需要它吗？** 如果你有一台 Linux 服务器跑着多个服务（Nginx、Docker、自定义进程），需要一个自动化健康检查+飞书告警+日报的系统——而不是每天早上 ssh 上去一个个看。特别适合有飞书/钉钉的企业或个人开发者。
+
+**它能干嘛？**
+- CPU/内存/磁盘/Swap/负载监控
+- 进程+端口检查（你配什么它就查什么）
+- SQLite 看板 DB 完整性检查
+- 看板备份时效性检查
+- 分级告警（Critical/Warning/Info）推送飞书
+- 每日健康日报自动生成
+- 历史数据 SQLite 存储，支持趋势查询
+
+**怎么装？**
+```bash
+# 安装依赖
+pip install pyyaml
+
+# 跑一次看看效果
+cd tools/server-guardian/
+python3 main.py
+
+# 持续监控（后台）
+python3 main.py --daemon &
+
+# 看日报
+python3 main.py --report
+```
+
+**相关文件：**
+- `server-guardian/main.py` — CLI 入口（~194 行）
+- `server-guardian/core/checkers.py` — 各检查函数（~319 行）
+- `server-guardian/core/collector.py` — 采集调度（~214 行）
+- `server-guardian/core/evaluator.py` — 告警评估（~224 行）
+- `server-guardian/alert/feishu.py` — 飞书推送（~148 行）
+- `server-guardian/storage/db.py` — SQLite 存储（~165 行）
+- `server-guardian/report/daily.py` — 日报生成（~119 行）
+- `server-guardian/config.yaml` — 阈值+监控项配置
 
 ---
 
